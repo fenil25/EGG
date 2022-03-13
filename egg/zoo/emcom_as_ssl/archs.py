@@ -178,6 +178,80 @@ class Receiver(nn.Module):
         return self.fc(resnet_output), resnet_output.detach()
 
 
+class FixedLengthFCNSender(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dim: int = 2048,
+        output_dim: int = 2048,
+        temperature: float = 1.0,
+        trainable_temperature: bool = False,
+        straight_through: bool = False,
+        nos: int = 4
+    ):
+        super(FixedLengthFCNSender, self).__init__()
+
+        if not trainable_temperature:
+            self.temperature = temperature
+        else:
+            self.temperature = torch.nn.Parameter(
+                torch.tensor([temperature]), requires_grad=True
+            )
+        self.straight_through = straight_through
+
+        self.nos = nos
+
+        self.fc_in_layers = []
+        self.fc_out_layers = []
+        for _ in range(self.nos):
+            in_layer = nn.Sequential(
+                nn.Linear(input_dim, hidden_dim),
+                nn.BatchNorm1d(hidden_dim),
+            )
+            out_layer = nn.Linear(hidden_dim, output_dim, bias=False)
+            self.fc_in_layers.append(in_layer)
+            self.fc_out_layers.append(out_layer)
+        self.fc_in_layers = nn.ModuleList(self.fc_in_layers)
+        self.fc_out_layers = nn.ModuleList(self.fc_out_layers)
+
+    def forward(self, resnet_output, nos=4):
+        final_message, messages = [], []
+        for i in range(nos):
+            first_projection = self.fc_in_layers[i](resnet_output)
+            message = gumbel_softmax_sample(
+                first_projection, self.temperature, self.training, self.straight_through
+            )
+            out = self.fc_out_layers[i](message)
+            messages.append(message)
+            final_message.append(out)
+        messages = torch.concat(messages, dim=1)
+        out = torch.concat(final_message, dim=1)
+        return out, messages.detach(), resnet_output.detach()
+
+
+class FixedLengthFCNReceiver(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int = 2048, output_dim: int = 2048, nos: int = 4):
+        super(FixedLengthFCNReceiver, self).__init__()
+        self.fc_out = []
+        self.nos = nos
+        for i in range(self.nos):
+            fc_layer = nn.Sequential(
+                nn.Linear(input_dim, hidden_dim),
+                nn.BatchNorm1d(hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, output_dim, bias=False),
+            )
+            self.fc_out.append(fc_layer)
+        self.fc_out = nn.ModuleList(self.fc_out)
+
+    def forward(self, _x, resnet_output):
+        out = []
+        for i in range(self.nos):
+            out.append(self.fc_out[i](resnet_output))
+        out = torch.concat(out, dim=1)
+        return out, resnet_output.detach()
+
+
 class EmComSSLSymbolGame(SenderReceiverContinuousCommunication):
     def __init__(self, *args, **kwargs):
         super(EmComSSLSymbolGame, self).__init__(*args, **kwargs)

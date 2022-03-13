@@ -127,6 +127,18 @@ def get_game_arch_opts(parser):
         action="store_true",
         help="Use a simclr-like sender argmaxing the message_like layer at test time",
     )
+    group.add_argument(
+        "--fixed_length_fcn_game",
+        default=False,
+        action="store_true",
+        help="Send multiple symbols using Fixed length communication",
+    )
+    group.add_argument(
+        "--nos",
+        type=int,
+        default=4,
+        help="Number of symbols to be sent in the case of fixed multiple length communication",
+    )
 
 
 def get_loss_opts(parser):

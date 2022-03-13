@@ -11,6 +11,8 @@ from egg.zoo.emcom_as_ssl.archs import (
     EmSSLSender,
     Receiver,
     SimCLRSender,
+    FixedLengthFCNSender,
+    FixedLengthFCNReceiver,
     VisionGameWrapper,
     VisionModule,
     get_vision_modules,
@@ -61,6 +63,22 @@ def build_game(opts):
             discrete_evaluation=opts.discrete_evaluation_simclr,
         )
         receiver = sender
+    elif opts.fixed_length_fcn_game:
+        sender = FixedLengthFCNSender(
+            input_dim=visual_features_dim,
+            hidden_dim=opts.projection_hidden_dim,
+            output_dim=opts.projection_output_dim,
+            temperature=opts.gs_temperature,
+            trainable_temperature=opts.train_gs_temperature,
+            straight_through=opts.straight_through,
+            nos=opts.nos,
+        )
+        receiver = FixedLengthFCNReceiver(
+            input_dim=visual_features_dim,
+            hidden_dim=opts.projection_hidden_dim,
+            output_dim=opts.projection_output_dim,
+            nos=opts.nos,
+        )
     else:
         sender = EmSSLSender(
             input_dim=visual_features_dim,
