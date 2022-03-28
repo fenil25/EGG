@@ -145,12 +145,13 @@ def get_callbacks(
     update_gs_temp_frequency: int = 1,
     gs_temperature_decay: float = 1.0,
     is_distributed: bool = False,
+    wandb_params: tuple = ("multi_symbol_fcn", 1),
 ):
     callbacks = [
         ConsoleLogger(as_json=True, print_train_loss=True),
         BestStatsTracker(),
         VisionModelSaver(shared_vision),
-        WandbLogger({}, project="multi_symbol_fcn", run_id="1"),
+        WandbLogger({}, project=wandb_params[0], run_id=wandb_params[1]),
     ]
 
     if is_distributed:

@@ -188,6 +188,18 @@ def get_common_opts(params):
         default=False,
         help="Run the game with pdb enabled",
     )
+    parser.add_argument(
+        "--wandb_project",
+        type=str,
+        default="multi_symbol_fcn",
+        help="Name of the project to be used for WandB"
+    )
+    parser.add_argument(
+        "--wandb_runid",
+        type=int,
+        default=1,
+        help="Run ID of the project"
+    )
 
     get_data_opts(parser)
     get_gs_opts(parser)

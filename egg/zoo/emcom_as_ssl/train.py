@@ -76,6 +76,7 @@ def main(params):
         update_gs_temp_frequency=opts.update_gs_temp_frequency,
         gs_temperature_decay=opts.gs_temperature_decay,
         is_distributed=opts.distributed_context.is_distributed,
+        wandb_params=(opts.wandb_project, opts.wandb_runid),
     )
 
     trainer = core.Trainer(
