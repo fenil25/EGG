@@ -214,9 +214,9 @@ class FixedLengthFCNSender(nn.Module):
         self.fc_in_layers = nn.ModuleList(self.fc_in_layers)
         self.fc_out_layers = nn.ModuleList(self.fc_out_layers)
 
-    def forward(self, resnet_output, nos=4):
+    def forward(self, resnet_output):
         final_message, messages = [], []
-        for i in range(nos):
+        for i in range(self.nos):
             first_projection = self.fc_in_layers[i](resnet_output)
             message = gumbel_softmax_sample(
                 first_projection, self.temperature, self.training, self.straight_through
