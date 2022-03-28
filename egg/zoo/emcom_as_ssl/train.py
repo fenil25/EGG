@@ -78,25 +78,7 @@ def main(params):
         is_distributed=opts.distributed_context.is_distributed,
         wandb_params=(opts.wandb_project, opts.wandb_runid),
     )
-
-    trainer = core.Trainer(
-        game=game,
-        optimizer=optimizer,
-        optimizer_scheduler=optimizer_scheduler,
-        train_data=train_loader,
-        callbacks=callbacks,
-    )
-    trainer.train(n_epochs=opts.n_epochs)
-
-    data_args = {
-        "image_size": opts.image_size,
-        "batch_size": opts.batch_size,
-        "dataset_name": "imagenet",
-        "num_workers": opts.num_workers,
-        "use_augmentations": False,
-        "is_distributed": opts.distributed_context.is_distributed,
-        "seed": opts.random_seed,
-    }
+    
     i_test_loader = get_dataloader(
         dataset_dir=opts.dataset_dir,
         dataset_name=opts.dataset_name,
@@ -109,6 +91,27 @@ def main(params):
         return_original_image=opts.return_original_image,
         is_train=False,
     )
+
+    trainer = core.Trainer(
+        game=game,
+        optimizer=optimizer,
+        optimizer_scheduler=optimizer_scheduler,
+        train_data=train_loader,
+        callbacks=callbacks,
+        validation_data=i_test_loader,
+    )
+    trainer.train(n_epochs=opts.n_epochs)
+
+    data_args = {
+        "image_size": opts.image_size,
+        "batch_size": opts.batch_size,
+        "dataset_name": "imagenet",
+        "num_workers": opts.num_workers,
+        "use_augmentations": False,
+        "is_distributed": opts.distributed_context.is_distributed,
+        "seed": opts.random_seed,
+    }
+    
 
     # o_test_loader = get_dataloader(
     #     dataset_dir="/private/home/mbaroni/agentini/representation_learning/generalizaton_set_construction/80_generalization_data_set/",
