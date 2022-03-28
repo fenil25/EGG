@@ -250,7 +250,11 @@ def _set_seed(seed) -> None:
     random.seed(seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
+    torch.use_deterministic_algorithms(True)
+    
     if torch.cuda.is_available():
+        import os
+        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
         torch.cuda.manual_seed_all(seed)
 
 
