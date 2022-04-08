@@ -145,6 +145,12 @@ def get_game_arch_opts(parser):
         action="store_true",
         help="Weight setting for the embedding layer for all the different symbols",
     )
+    group.add_argument(
+        "--structured_comm",
+        default=False,
+        action="store_true",
+        help="Multi symbol communication also uses intermediate layers of ResNet",
+    )
 
 
 def get_loss_opts(parser):

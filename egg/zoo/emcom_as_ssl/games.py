@@ -24,6 +24,7 @@ def build_vision_encoder(
     model_name: str = "resnet50",
     shared_vision: bool = False,
     pretrain_vision: bool = False,
+    use_hooks: bool = False,
 ):
     (
         sender_vision_module,
@@ -35,6 +36,7 @@ def build_vision_encoder(
     vision_encoder = VisionModule(
         sender_vision_module=sender_vision_module,
         receiver_vision_module=receiver_vision_module,
+        use_hooks=use_hooks,
     )
     return vision_encoder, visual_features_dim
 
@@ -44,6 +46,7 @@ def build_game(opts):
         model_name=opts.model_name,
         shared_vision=opts.shared_vision,
         pretrain_vision=opts.pretrain_vision,
+        use_hooks=opts.structured_comm,
     )
     loss = get_loss(
         temperature=opts.loss_temperature,
@@ -73,12 +76,14 @@ def build_game(opts):
             straight_through=opts.straight_through,
             shared_embedding=opts.shared_embedding,
             nos=opts.nos,
+            structured_comm=opts.structured_comm,
         )
         receiver = FixedLengthFCNReceiver(
             input_dim=visual_features_dim,
             hidden_dim=opts.projection_hidden_dim,
             output_dim=opts.projection_output_dim,
             nos=opts.nos,
+            structured_comm=opts.structured_comm,
         )
     else:
         sender = EmSSLSender(

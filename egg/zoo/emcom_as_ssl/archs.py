@@ -56,6 +56,7 @@ class VisionModule(nn.Module):
         self,
         sender_vision_module: nn.Module,
         receiver_vision_module: Optional[nn.Module] = None,
+        use_hooks: bool = True,
     ):
         super(VisionModule, self).__init__()
 
@@ -65,12 +66,40 @@ class VisionModule(nn.Module):
         if not self.shared:
             self.encoder_recv = receiver_vision_module
 
+        self.use_hooks = use_hooks
+        self.result = {}
+
+        if self.use_hooks:
+            self.register_hooks(self.encoder)
+
+            if not self.shared:
+                self.register_hooks(self.encoder_recv)
+
+    def register_hooks(self, model):
+        def save_outputs_hook(layer_id):
+            def fn(_m, _input, output):
+                output = output.view(output.size(0), -1)
+                self.result[layer_id] = output
+            return fn
+
+        model.layer1.register_forward_hook(save_outputs_hook(1))
+        model.layer2.register_forward_hook(save_outputs_hook(2))
+        model.layer3.register_forward_hook(save_outputs_hook(3))
+        model.layer4.register_forward_hook(save_outputs_hook(4))
+        model.fc.register_forward_hook(save_outputs_hook(5))
+
     def forward(self, x_i, x_j):
         encoded_input_sender = self.encoder(x_i)
+        if self.use_hooks:
+            encoded_input_sender = self.result.copy()
+
         if self.shared:
             encoded_input_recv = self.encoder(x_j)
         else:
             encoded_input_recv = self.encoder_recv(x_j)
+        if self.use_hooks:
+            encoded_input_recv = self.result.copy()
+
         return encoded_input_sender, encoded_input_recv
 
 
@@ -188,7 +217,8 @@ class FixedLengthFCNSender(nn.Module):
         trainable_temperature: bool = False,
         straight_through: bool = False,
         shared_embedding: bool = False,
-        nos: int = 4
+        nos: int = 4,
+        structured_comm: bool = False,
     ):
         super(FixedLengthFCNSender, self).__init__()
 
@@ -200,15 +230,23 @@ class FixedLengthFCNSender(nn.Module):
             )
         self.straight_through = straight_through
         self.shared_embedding = shared_embedding
+        self.structured_comm = structured_comm
 
         self.nos = nos
 
         self.fc_in_layers = []
-        for _ in range(self.nos):
-            in_layer = nn.Sequential(
-                nn.Linear(input_dim, hidden_dim),
-                nn.BatchNorm1d(hidden_dim),
-            )
+        dims = [802816, 401408, 200704, 100352, input_dim]
+        for i in range(self.nos):
+            if self.structured_comm:
+                in_layer = nn.Sequential(
+                    nn.Linear(dims[i], hidden_dim),
+                    nn.BatchNorm1d(hidden_dim),
+                )
+            else:
+                in_layer = nn.Sequential(
+                    nn.Linear(input_dim, hidden_dim),
+                    nn.BatchNorm1d(hidden_dim),
+                )
             self.fc_in_layers.append(in_layer)
         self.fc_in_layers = nn.ModuleList(self.fc_in_layers)
 
@@ -223,7 +261,10 @@ class FixedLengthFCNSender(nn.Module):
     def forward(self, resnet_output):
         final_message, messages = [], []
         for i in range(self.nos):
-            first_projection = self.fc_in_layers[i](resnet_output)
+            if self.structured_comm:
+                first_projection = self.fc_in_layers[i](resnet_output[i+1])
+            else:
+                first_projection = self.fc_in_layers[i](resnet_output)
             message = gumbel_softmax_sample(
                 first_projection, self.temperature, self.training, self.straight_through
             )
@@ -235,29 +276,54 @@ class FixedLengthFCNSender(nn.Module):
             final_message.append(out)
         messages = torch.concat(messages, dim=1)
         out = torch.concat(final_message, dim=1)
+        if self.structured_comm:
+            resnet_output = resnet_output[5]
         return out, messages.detach(), resnet_output.detach()
 
 
 class FixedLengthFCNReceiver(nn.Module):
-    def __init__(self, input_dim: int, hidden_dim: int = 2048, output_dim: int = 2048, nos: int = 4):
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dim: int = 2048,
+        output_dim: int = 2048,
+        nos: int = 4,
+        structured_comm: bool = False
+    ):
         super(FixedLengthFCNReceiver, self).__init__()
         self.fc_out = []
         self.nos = nos
+        self.structured_comm = structured_comm
+
+        dims = [802816, 401408, 200704, 100352, input_dim]
         for i in range(self.nos):
-            fc_layer = nn.Sequential(
-                nn.Linear(input_dim, hidden_dim),
-                nn.BatchNorm1d(hidden_dim),
-                nn.ReLU(),
-                nn.Linear(hidden_dim, output_dim, bias=False),
-            )
+            if structured_comm:
+                fc_layer = nn.Sequential(
+                    nn.Linear(dims[i], hidden_dim),
+                    nn.BatchNorm1d(hidden_dim),
+                    nn.ReLU(),
+                    nn.Linear(hidden_dim, output_dim, bias=False),
+                )
+            else:
+                fc_layer = nn.Sequential(
+                    nn.Linear(input_dim, hidden_dim),
+                    nn.BatchNorm1d(hidden_dim),
+                    nn.ReLU(),
+                    nn.Linear(hidden_dim, output_dim, bias=False),
+                )
             self.fc_out.append(fc_layer)
         self.fc_out = nn.ModuleList(self.fc_out)
 
     def forward(self, _x, resnet_output):
         out = []
         for i in range(self.nos):
-            out.append(self.fc_out[i](resnet_output))
+            if self.structured_comm:
+                out.append(self.fc_out[i](resnet_output[i+1]))
+            else:
+                out.append(self.fc_out[i](resnet_output))
         out = torch.concat(out, dim=1)
+        if self.structured_comm:
+            resnet_output = resnet_output[5]
         return out, resnet_output.detach()
 
 
