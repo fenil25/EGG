@@ -139,6 +139,12 @@ def get_game_arch_opts(parser):
         default=4,
         help="Number of symbols to be sent in the case of fixed multiple length communication",
     )
+    group.add_argument(
+        "--shared_embedding",
+        default=False,
+        action="store_true",
+        help="Weight setting for the embedding layer for all the different symbols",
+    )
 
 
 def get_loss_opts(parser):

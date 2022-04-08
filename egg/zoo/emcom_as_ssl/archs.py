@@ -187,6 +187,7 @@ class FixedLengthFCNSender(nn.Module):
         temperature: float = 1.0,
         trainable_temperature: bool = False,
         straight_through: bool = False,
+        shared_embedding: bool = False,
         nos: int = 4
     ):
         super(FixedLengthFCNSender, self).__init__()
@@ -198,21 +199,26 @@ class FixedLengthFCNSender(nn.Module):
                 torch.tensor([temperature]), requires_grad=True
             )
         self.straight_through = straight_through
+        self.shared_embedding = shared_embedding
 
         self.nos = nos
 
         self.fc_in_layers = []
-        self.fc_out_layers = []
         for _ in range(self.nos):
             in_layer = nn.Sequential(
                 nn.Linear(input_dim, hidden_dim),
                 nn.BatchNorm1d(hidden_dim),
             )
-            out_layer = nn.Linear(hidden_dim, output_dim, bias=False)
             self.fc_in_layers.append(in_layer)
-            self.fc_out_layers.append(out_layer)
         self.fc_in_layers = nn.ModuleList(self.fc_in_layers)
-        self.fc_out_layers = nn.ModuleList(self.fc_out_layers)
+
+        if self.shared_embedding:
+            self.fc_out = nn.Linear(hidden_dim, output_dim, bias=False)
+        else:
+            self.fc_out_layers = []
+            for _ in range(self.nos):
+                self.fc_out_layers.append(nn.Linear(hidden_dim, output_dim, bias=False))
+            self.fc_out_layers = nn.ModuleList(self.fc_out_layers)
 
     def forward(self, resnet_output):
         final_message, messages = [], []
@@ -221,7 +227,10 @@ class FixedLengthFCNSender(nn.Module):
             message = gumbel_softmax_sample(
                 first_projection, self.temperature, self.training, self.straight_through
             )
-            out = self.fc_out_layers[i](message)
+            if self.shared_embedding:
+                out = self.fc_out(message)
+            else:
+                out = self.fc_out_layers[i](message)
             messages.append(message)
             final_message.append(out)
         messages = torch.concat(messages, dim=1)

@@ -71,6 +71,7 @@ def build_game(opts):
             temperature=opts.gs_temperature,
             trainable_temperature=opts.train_gs_temperature,
             straight_through=opts.straight_through,
+            shared_embedding=opts.shared_embedding,
             nos=opts.nos,
         )
         receiver = FixedLengthFCNReceiver(
