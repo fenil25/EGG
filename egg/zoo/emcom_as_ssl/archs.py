@@ -219,6 +219,7 @@ class FixedLengthFCNSender(nn.Module):
         shared_embedding: bool = False,
         nos: int = 4,
         structured_comm: bool = False,
+        dataset_name: str = "imagenet",
     ):
         super(FixedLengthFCNSender, self).__init__()
 
@@ -235,7 +236,12 @@ class FixedLengthFCNSender(nn.Module):
         self.nos = nos
 
         self.fc_in_layers = []
-        dims = [802816, 401408, 200704, 100352, input_dim]
+
+        if dataset_name == "cifar10":
+            dims = [16384, 8192, 4096, 2048, input_dim]
+        else:
+            dims = [802816, 401408, 200704, 100352, input_dim]
+
         for i in range(self.nos):
             if self.structured_comm:
                 in_layer = nn.Sequential(
@@ -288,14 +294,18 @@ class FixedLengthFCNReceiver(nn.Module):
         hidden_dim: int = 2048,
         output_dim: int = 2048,
         nos: int = 4,
-        structured_comm: bool = False
+        structured_comm: bool = False,
+        dataset_name: str = "imagenet",
     ):
         super(FixedLengthFCNReceiver, self).__init__()
         self.fc_out = []
         self.nos = nos
         self.structured_comm = structured_comm
 
-        dims = [802816, 401408, 200704, 100352, input_dim]
+        if dataset_name == "cifar10":
+            dims = [16384, 8192, 4096, 2048, input_dim]
+        else:
+            dims = [802816, 401408, 200704, 100352, input_dim]
         for i in range(self.nos):
             if structured_comm:
                 fc_layer = nn.Sequential(

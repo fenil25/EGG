@@ -77,6 +77,7 @@ def build_game(opts):
             shared_embedding=opts.shared_embedding,
             nos=opts.nos,
             structured_comm=opts.structured_comm,
+            dataset_name=opts.dataset_name,
         )
         receiver = FixedLengthFCNReceiver(
             input_dim=visual_features_dim,
@@ -84,6 +85,7 @@ def build_game(opts):
             output_dim=opts.projection_output_dim,
             nos=opts.nos,
             structured_comm=opts.structured_comm,
+            dataset_name=opts.dataset_name,
         )
     else:
         sender = EmSSLSender(
