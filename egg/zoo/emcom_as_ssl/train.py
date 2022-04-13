@@ -48,6 +48,9 @@ def main(params):
 
     game = build_game(opts)
 
+    checkpoint = torch.load(opts.load_from_checkpoint)
+    game.load_state_dict(checkpoint.model_state_dict)
+
     model_parameters = add_weight_decay(game, opts.weight_decay, skip_name="bn")
 
     optimizer = torch.optim.SGD(
@@ -78,7 +81,7 @@ def main(params):
         is_distributed=opts.distributed_context.is_distributed,
         wandb_params=(opts.wandb_project, opts.wandb_runid),
     )
-    
+
     i_test_loader = get_dataloader(
         dataset_dir=opts.dataset_dir,
         dataset_name=opts.dataset_name,
@@ -90,6 +93,7 @@ def main(params):
         use_augmentations=opts.use_augmentations,
         return_original_image=opts.return_original_image,
         is_train=False,
+        new_eval=True,
     )
 
     trainer = core.Trainer(
@@ -100,7 +104,7 @@ def main(params):
         callbacks=callbacks,
         validation_data=i_test_loader,
     )
-    trainer.train(n_epochs=opts.n_epochs)
+    # trainer.train(n_epochs=opts.n_epochs)
 
     data_args = {
         "image_size": opts.image_size,
@@ -111,7 +115,6 @@ def main(params):
         "is_distributed": opts.distributed_context.is_distributed,
         "seed": opts.random_seed,
     }
-    
 
     # o_test_loader = get_dataloader(
     #     dataset_dir="/private/home/mbaroni/agentini/representation_learning/generalizaton_set_construction/80_generalization_data_set/",

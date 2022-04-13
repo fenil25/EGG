@@ -9,6 +9,38 @@ import torch
 from PIL import ImageFilter
 from torchvision import datasets, transforms
 
+import pickle
+import os
+from collections import defaultdict
+
+
+class CustomDataset(torch.utils.data.Dataset):
+    def __init__(self, data_dir: str = "./data", img_size: int = 32):
+        test_path = os.path.join(data_dir, "test_batch")
+        with open(test_path, 'rb') as fo:
+            data_dict = pickle.load(fo, encoding='bytes')
+        self.labels = data_dict[b"labels"]
+        self.data = data_dict[b"data"]
+        self.img_size = img_size
+        self.mappings = defaultdict(list)
+        for i in range(len(self.labels)):
+            self.mappings[self.labels[i]].append(i)
+
+    def __getitem__(self, idx):
+        label = self.labels[idx]
+        x_i = self.get_image(idx)
+        random_sample = random.choice(self.mappings[label])
+        x_j = self.get_image(random_sample)
+        return (x_i, x_j), torch.tensor(label)
+
+    def get_image(self, idx):
+        img = self.data[idx]
+        img = img.reshape(3, self.img_size, self.img_size)
+        return torch.from_numpy(img)
+
+    def __len__(self, ):
+        return len(self.labels)
+
 
 def get_dataloader(
     dataset_dir: str,
@@ -21,16 +53,20 @@ def get_dataloader(
     seed: int = 111,
     image_size: int = 32,
     is_train: bool = True,
+    eval_new: bool = False,
 ):
 
     transformations = ImageTransformation(
-        image_size, use_augmentations, return_original_image, dataset_name
+        image_size, use_augmentations, return_original_image, dataset_name, is_train, eval_new
     )
 
     if dataset_name == "cifar10":
-        train_dataset = datasets.CIFAR10(
-            root="./data", train=is_train, download=True, transform=transformations
-        )
+        if eval_new and not is_train:
+            train_dataset = CustomDataset(data_dir=dataset_dir, img_size=image_size)
+        else:
+            train_dataset = datasets.CIFAR10(
+                root="./data", train=is_train, download=True, transform=transformations
+            )
     else:
         train_dataset = datasets.ImageFolder(dataset_dir, transform=transformations)
 
@@ -122,4 +158,5 @@ class ImageTransformation:
         x_j = self.transform(x)
         if self.return_original_image:
             return x_i, x_j, self.original_image_transform(x)
+        return x_i, x_j
         return x_i, x_j
