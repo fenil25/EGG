@@ -93,7 +93,7 @@ def main(params):
         use_augmentations=opts.use_augmentations,
         return_original_image=opts.return_original_image,
         is_train=False,
-        new_eval=True,
+        eval_new=True,
     )
 
     trainer = core.Trainer(
