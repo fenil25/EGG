@@ -36,7 +36,7 @@ class CustomDataset(torch.utils.data.Dataset):
     def get_image(self, idx):
         img = self.data[idx]
         img = img.reshape(3, self.img_size, self.img_size)
-        return torch.from_numpy(img)
+        return torch.tensor(img, dtype=torch.float)
 
     def __len__(self, ):
         return len(self.labels)
