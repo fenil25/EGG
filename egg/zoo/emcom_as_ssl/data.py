@@ -57,7 +57,7 @@ def get_dataloader(
 ):
 
     transformations = ImageTransformation(
-        image_size, use_augmentations, return_original_image, dataset_name, is_train, eval_new
+        image_size, use_augmentations, return_original_image, dataset_name
     )
 
     if dataset_name == "cifar10":
