@@ -47,9 +47,8 @@ def main(params):
     )
 
     game = build_game(opts)
-
-    checkpoint = torch.load(opts.load_from_checkpoint)
-    game.load_state_dict(checkpoint.model_state_dict)
+    # checkpoint = torch.load(opts.load_from_checkpoint)
+    # game.load_state_dict(checkpoint.model_state_dict)
 
     model_parameters = add_weight_decay(game, opts.weight_decay, skip_name="bn")
 
@@ -93,7 +92,7 @@ def main(params):
         use_augmentations=opts.use_augmentations,
         return_original_image=opts.return_original_image,
         is_train=False,
-        eval_new=True,
+        shared_label_eval=opts.shared_label_eval,
     )
 
     trainer = core.Trainer(
@@ -104,7 +103,9 @@ def main(params):
         callbacks=callbacks,
         validation_data=i_test_loader,
     )
-    # trainer.train(n_epochs=opts.n_epochs)
+
+    if not opts.eval_only:
+        trainer.train(n_epochs=opts.n_epochs)
 
     data_args = {
         "image_size": opts.image_size,

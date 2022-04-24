@@ -212,6 +212,18 @@ def get_common_opts(params):
         default=1,
         help="Run ID of the project"
     )
+    parser.add_argument(
+        "--eval_only",
+        action="store_true",
+        default=False,
+        help="Only run the evaluations and do not train the model",
+    )
+    parser.add_argument(
+        "--shared_label_eval",
+        action="store_true",
+        default=False,
+        help="Run evaluations in testing where sender and receiver get different images of same label",
+    )
 
     get_data_opts(parser)
     get_gs_opts(parser)

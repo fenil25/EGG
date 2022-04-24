@@ -53,7 +53,7 @@ def get_dataloader(
     seed: int = 111,
     image_size: int = 32,
     is_train: bool = True,
-    eval_new: bool = False,
+    shared_label_eval: bool = False,
 ):
 
     transformations = ImageTransformation(
@@ -61,7 +61,7 @@ def get_dataloader(
     )
 
     if dataset_name == "cifar10":
-        if eval_new and not is_train:
+        if shared_label_eval and not is_train:
             train_dataset = CustomDataset(data_dir=dataset_dir, img_size=image_size)
         else:
             train_dataset = datasets.CIFAR10(
@@ -158,5 +158,4 @@ class ImageTransformation:
         x_j = self.transform(x)
         if self.return_original_image:
             return x_i, x_j, self.original_image_transform(x)
-        return x_i, x_j
         return x_i, x_j

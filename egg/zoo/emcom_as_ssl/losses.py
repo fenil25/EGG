@@ -14,12 +14,14 @@ def get_loss(
     similarity: str = "cosine",
     use_distributed_negatives: bool = False,
     loss_type: str = "xent",
+    shared_label_eval: bool = False,
 ):
     if loss_type.lower() == "xent":
         return XEntLoss(
             temperature=temperature,
             similarity=similarity,
             use_distributed_negatives=use_distributed_negatives,
+            shared_label_eval=shared_label_eval,
         )
     elif loss_type.lower() == "ntxent":
         if use_distributed_negatives:
@@ -30,6 +32,7 @@ def get_loss(
             temperature=temperature,
             similarity=similarity,
             use_distributed_negatives=use_distributed_negatives,
+            shared_label_eval=shared_label_eval,
         )
     else:
         raise NotImplementedError(f"ERROR: cannot recognize {loss_type} loss")
@@ -41,8 +44,10 @@ class Loss:
         temperature: float = 1.0,
         similarity: str = "cosine",
         use_distributed_negatives: bool = False,
+        shared_label_eval: bool = False,
     ):
         self.temperature = temperature
+        self.shared_label_eval = shared_label_eval
 
         similarities = {"cosine", "dot"}
         assert (
@@ -68,7 +73,7 @@ class Loss:
 
 
 class XEntLoss(Loss):
-    def xent_loss(self, message: torch.Tensor, receiver_output: torch.Tensor):
+    def xent_loss(self, message: torch.Tensor, receiver_output: torch.Tensor, class_labels: torch.Tensor):
         batch_size = receiver_output.shape[0]
         labels = torch.arange(batch_size, device=message.device)
         if self.use_distributed_negatives:
@@ -87,7 +92,12 @@ class XEntLoss(Loss):
         else:
             model_guesses = self.get_similarity_matrix(message, receiver_output)
 
-        acc = (model_guesses.argmax(dim=1) == labels).detach().float()
+        preds = model_guesses.argmax(dim=1)
+        if self.shared_label_eval:
+            acc = (class_labels[preds] == class_labels[labels]).detach().float()
+        else:
+            acc = (preds == labels).detach().float()
+
         loss = F.cross_entropy(model_guesses, labels, reduction="none")
         return loss, {"acc": acc, "game_acc": acc}
 
@@ -97,13 +107,13 @@ class XEntLoss(Loss):
         message,
         _receiver_input,
         receiver_output,
-        _labels,
+        labels,
         _aux_input,
     ):
         assert (
             message.shape == receiver_output.shape
         ), "Message and receiver output must be of the same size."
-        return self.xent_loss(message, receiver_output)
+        return self.xent_loss(message, receiver_output, labels)
 
 
 class NTXentLoss(Loss):

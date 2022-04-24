@@ -53,6 +53,7 @@ def build_game(opts):
         similarity=opts.similarity,
         use_distributed_negatives=opts.use_distributed_negatives,
         loss_type=opts.loss_type,
+        shared_label_eval=opts.shared_label_eval,
     )
 
     train_logging_strategy = LoggingStrategy(False, False, True, True, True, False)
