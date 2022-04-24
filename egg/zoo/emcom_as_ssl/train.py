@@ -122,10 +122,32 @@ def main(params):
     #     **data_args,
     # )
 
+    print("\nAUGMENTED DATA RESULTS: ")
     _, i_test_interaction = trainer.eval(i_test_loader)
     dump = dict((k, v.mean().item()) for k, v in i_test_interaction.aux.items())
-    dump.update(dict(mode="VALIDATION_I_TEST"))
+    dump.update(dict(mode="VALIDATION_I_AUG_TEST"))
     print(json.dumps(dump), flush=True)
+
+    if opts.diff_aug_acc:
+        i_non_aug_test_loader = get_dataloader(
+            dataset_dir=opts.dataset_dir,
+            dataset_name=opts.dataset_name,
+            image_size=opts.image_size,
+            batch_size=opts.batch_size,
+            num_workers=opts.num_workers,
+            is_distributed=opts.distributed_context.is_distributed,
+            seed=opts.random_seed,
+            use_augmentations=False,
+            return_original_image=opts.return_original_image,
+            is_train=False,
+            shared_label_eval=opts.shared_label_eval,
+        )
+
+        print("\nNON AUGMENTED DATA RESULTS: ")
+        _, i_non_aug_test_interaction = trainer.eval(i_non_aug_test_loader)
+        dump = dict((k, v.mean().item()) for k, v in i_non_aug_test_interaction.aux.items())
+        dump.update(dict(mode="VALIDATION_I_NON_AUG_TEST"))
+        print(json.dumps(dump), flush=True)
 
     # _, o_test_interaction = trainer.eval(o_test_loader)
     # dump = dict((k, v.mean().item()) for k, v in o_test_interaction.aux.items())

@@ -99,6 +99,7 @@ def get_vision_module_opts(parser):
         help="If set, pretrained vision modules will be used",
     )
     group.add_argument("--use_augmentations", action="store_true", default=False)
+    group.add_argument("--diff_aug_acc", action="store_true", default=False)
 
 
 def get_game_arch_opts(parser):
