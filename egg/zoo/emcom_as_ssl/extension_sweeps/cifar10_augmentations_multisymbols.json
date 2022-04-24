@@ -1,0 +1,18 @@
+{
+    "n_epoch": [100],
+    "batch_size": [256],
+    "lr": [0.3],
+    "random_seed": [111],
+    "shared_vision": [true],
+    "gs_temperature": [5.0],
+    "loss_type": ["xent"],
+    "validation_freq": [0],
+    "image_size": [32],
+    "model_name": ["resnet50"],
+    "dataset_name": ["cifar10"],
+    "use_larc": [true],
+    "fixed_length_fcn_game": [true],
+    "nos": [2],
+    "projection_hidden_dim": [40],
+    "use_augmentations": [true],
+}
