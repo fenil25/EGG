@@ -91,14 +91,16 @@ class XEntLoss(Loss):
             labels = labels + (output_size * current_rank)
         else:
             model_guesses = self.get_similarity_matrix(message, receiver_output)
+            
+        loss = F.cross_entropy(model_guesses, labels, reduction="none")
 
         preds = model_guesses.argmax(dim=1)
+        acc = (preds == labels).detach().float()
+        
         if self.shared_label_eval:
-            acc = (class_labels[preds] == class_labels[labels]).detach().float()
-        else:
-            acc = (preds == labels).detach().float()
-
-        loss = F.cross_entropy(model_guesses, labels, reduction="none")
+            shared_label_acc = (class_labels[preds] == class_labels[labels]).detach().float()
+            return loss, {"acc": acc, "game_acc": acc, "shared_label_acc": shared_label_acc}
+        
         return loss, {"acc": acc, "game_acc": acc}
 
     def __call__(
