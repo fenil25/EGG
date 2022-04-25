@@ -16,7 +16,12 @@ def get_data_opts(parser):
         default="./data",
         help="Dataset location",
     )
-
+    group.add_argument(
+        "--test_data_dir",
+        type=str,
+        default="./data",
+        help="Test Dataset location",
+    )
     group.add_argument(
         "--dataset_name",
         choices=["cifar10", "imagenet"],

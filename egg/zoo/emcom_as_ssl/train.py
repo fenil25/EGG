@@ -81,27 +81,12 @@ def main(params):
         wandb_params=(opts.wandb_project, opts.wandb_runid),
     )
 
-    i_test_loader = get_dataloader(
-        dataset_dir=opts.dataset_dir,
-        dataset_name=opts.dataset_name,
-        image_size=opts.image_size,
-        batch_size=opts.batch_size,
-        num_workers=opts.num_workers,
-        is_distributed=opts.distributed_context.is_distributed,
-        seed=opts.random_seed,
-        use_augmentations=opts.use_augmentations,
-        return_original_image=opts.return_original_image,
-        is_train=False,
-        shared_label_eval=opts.shared_label_eval,
-    )
-
     trainer = core.Trainer(
         game=game,
         optimizer=optimizer,
         optimizer_scheduler=optimizer_scheduler,
         train_data=train_loader,
         callbacks=callbacks,
-        validation_data=i_test_loader,
     )
 
     if not opts.eval_only:
@@ -116,6 +101,10 @@ def main(params):
         "is_distributed": opts.distributed_context.is_distributed,
         "seed": opts.random_seed,
     }
+
+    i_test_loader = get_dataloader(
+        dataset_dir=opts.test_data_dir, **data_args
+    )
 
     # o_test_loader = get_dataloader(
     #     dataset_dir="/private/home/mbaroni/agentini/representation_learning/generalizaton_set_construction/80_generalization_data_set/",
