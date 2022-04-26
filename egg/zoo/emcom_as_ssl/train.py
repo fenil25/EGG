@@ -111,7 +111,6 @@ def main(params):
     #     **data_args,
     # )
 
-    print("\nAUGMENTED DATA RESULTS: ")
     _, i_test_interaction = trainer.eval(i_test_loader)
     dump = dict((k, v.mean().item()) for k, v in i_test_interaction.aux.items())
     dump.update(dict(mode="VALIDATION_I_AUG_TEST"))

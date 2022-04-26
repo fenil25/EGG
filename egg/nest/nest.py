@@ -63,7 +63,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--partition", type=str, default="devlab", help="Partition requested"
     )
-    parser.add_argument("--time", type=int, default=1000, help="Job timeout")
+    parser.add_argument("--time", type=int, default=4320, help="Job timeout")
     parser.add_argument(
         "--checkpoint_freq",
         type=int,
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     executor.update_parameters(
         timeout_min=args.time,
         slurm_partition=args.partition,
-        cpus_per_task=2,
+        cpus_per_task=10,
         gpus_per_node=args.tasks,
         name=args.name,
         slurm_comment=args.comment,

@@ -1,6 +1,6 @@
 {
     "n_epoch": [100],
-    "batch_size": [256],
+    "batch_size": [128],
     "lr": [2.4],
     "random_seed": [111],
     "shared_vision": [true],
@@ -10,10 +10,10 @@
     "image_size": [224],
     "model_name": ["resnet50"],
     "dataset_name": ["imagenet"],
-    "dataset_dir": ["/work/fdoshi_umass_edu/fenil25/data/imagenet/imagenet_data"],
-    "test_data_dir": ["/work/fdoshi_umass_edu/fenil25/data/imagenet/test_data"],
+    "dataset_dir": ["/datasets01/imagenet_full_size/061417/train"],
+    "test_data_dir": ["/datasets01/imagenet_full_size/061417/val"],
     "use_larc": [true],
     "fixed_length_fcn_game": [true],
     "nos": [2],
-    "use_augmentations": [true]
+    "projection_hidden_dim": [2048]
 }
