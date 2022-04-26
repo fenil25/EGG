@@ -63,7 +63,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--partition", type=str, default="devlab", help="Partition requested"
     )
-    parser.add_argument("--time", type=int, default=4320, help="Job timeout")
+    parser.add_argument("--time", type=int, default=1000, help="Job timeout")
     parser.add_argument(
         "--checkpoint_freq",
         type=int,
